@@ -1,0 +1,1932 @@
+{
+  "description": "Marina bot flow",
+  "states": [
+    {
+      "name": "Trigger",
+      "type": "trigger",
+      "transitions": [
+        {
+          "next": "set_vbs_for_text",
+          "event": "incomingMessage"
+        },
+        {
+          "next": "fcn_get_ALERT_phone",
+          "event": "incomingCall"
+        },
+        {
+          "event": "incomingConversationMessage"
+        },
+        {
+          "event": "incomingRequest"
+        },
+        {
+          "event": "incomingParent"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -870,
+          "y": -1020
+        }
+      }
+    },
+    {
+      "name": "gather_hello",
+      "type": "gather-input-on-call",
+      "transitions": [
+        {
+          "event": "keypress"
+        },
+        {
+          "next": "split_speech_result",
+          "event": "speech"
+        },
+        {
+          "next": "say_play_connect_dockmaster",
+          "event": "timeout"
+        }
+      ],
+      "properties": {
+        "voice": "alice",
+        "offset": {
+          "x": 720,
+          "y": 980
+        },
+        "loop": 1,
+        "say": "Are you reporting a FIRE or a MEDICAL EMERGENCY or some OTHER kind of incident?",
+        "language": "en-US",
+        "stop_gather": false,
+        "gather_language": "en-US",
+        "speech_model": "experimental_utterances",
+        "timeout": 3
+      }
+    },
+    {
+      "name": "split_speech_result",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "next": "say_play_didnt_understand",
+          "event": "noMatch"
+        },
+        {
+          "next": "set_variables_FIRE",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "fire",
+              "arguments": [
+                "{{widgets.gather_hello.SpeechResult}}"
+              ],
+              "type": "contains",
+              "value": "fire"
+            }
+          ]
+        },
+        {
+          "next": "set_variables_MEDICAL",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "medical",
+              "arguments": [
+                "{{widgets.gather_hello.SpeechResult}}"
+              ],
+              "type": "contains",
+              "value": "medical"
+            }
+          ]
+        },
+        {
+          "next": "say_play_OTHER",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "other",
+              "arguments": [
+                "{{widgets.gather_hello.SpeechResult}}"
+              ],
+              "type": "contains",
+              "value": "other"
+            }
+          ]
+        },
+        {
+          "next": "say_play_GOODBYE",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value contains admin",
+              "arguments": [
+                "{{widgets.gather_hello.SpeechResult}}"
+              ],
+              "type": "contains",
+              "value": "admin"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{widgets.gather_hello.SpeechResult}}",
+        "offset": {
+          "x": 330,
+          "y": 1820
+        }
+      }
+    },
+    {
+      "name": "say_play_FIRE",
+      "type": "say-play",
+      "transitions": [
+        {
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "voice": "alice",
+        "offset": {
+          "x": -340,
+          "y": 2470
+        },
+        "loop": 1,
+        "say": "I have updated the team that there is a fire incident at the marina.  \n\nIf this is a large fire, hang up now and call 9 1 1 if you have not yet done so. Tell the 9 1 1 operator you are at the Albemarle Plantation Marina Office and describe the emergency to them. \n\nHelp should arrive shortly.\n\nDo-not-try to fight the fire. Marina fires are very dangerous. They can emit toxic fumes because of the fuels and other flammables associated with marinas. Marina fires can grow very quickly. Alert others at the marina to the fire, and get to a safe place.  Tell response team members when they arrive where the fire is. If you are safe at this phone, please remain there. Someone may call this number to ask for additional details to help find the assistance you need.\n\nGoodbye.",
+        "language": "en-US"
+      }
+    },
+    {
+      "name": "say_play_MEDICAL",
+      "type": "say-play",
+      "transitions": [
+        {
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "voice": "alice",
+        "offset": {
+          "x": 80,
+          "y": 2470
+        },
+        "loop": 1,
+        "say": "I have updated the Marina team that there is a medical incident at the marina. \n\nIf this is a serious injury, hang up and call 9 1 1 now if you have not already done so.   Tell the 9 1 1 operator you are at the Albemarle Plantation Marina Office and describe the emergency to them.  \n\nHelp should arrive shortly.  \n\nIf you are able and willing, render first aid or other assistance now. \n\nIf you cann, please remain at this hotline phone, and direct responders to the incident when they arrive. Someone may call this number to ask for additional details to help find the assistance you need.\n\nGoodbye.",
+        "language": "en-US"
+      }
+    },
+    {
+      "name": "say_play_OTHER",
+      "type": "say-play",
+      "transitions": [
+        {
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "voice": "alice",
+        "offset": {
+          "x": 170,
+          "y": 2250
+        },
+        "loop": 1,
+        "say": "I understand there is a serious problem at the marina. I have already notified the Dockmaster and the Marina Incident Response Team. Help should arrive shortly.  \n\nBe sure you are in a safe place. Stay by this phone if you can. Someone may call this phone to request additional information. Please help responders locate the incident when they arrive.\n\nGoodbye.",
+        "language": "en-US"
+      }
+    },
+    {
+      "name": "call_split_phoneQ2",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "next": "say_play_NOPE",
+          "event": "noMatch"
+        },
+        {
+          "next": "set_variables_CRITICAL",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value equal_to {{flow.variables.alert_phone}}",
+              "arguments": [
+                "{{trigger.call.From}}"
+              ],
+              "type": "equal_to",
+              "value": "{{flow.variables.alert_phone}}"
+            }
+          ]
+        },
+        {
+          "next": "set_variables_CRITICAL",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value equal_to +19082293825",
+              "arguments": [
+                "{{trigger.call.From}}"
+              ],
+              "type": "equal_to",
+              "value": "+19082293825"
+            }
+          ]
+        },
+        {
+          "next": "set_variables_CRITICAL",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value equal_to +18505252542",
+              "arguments": [
+                "{{trigger.call.From}}"
+              ],
+              "type": "equal_to",
+              "value": "+18505252542"
+            }
+          ]
+        },
+        {
+          "next": "set_variables_CRITICAL",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value equal_to {{flow.variables.tester_phone}}",
+              "arguments": [
+                "{{trigger.call.From}}"
+              ],
+              "type": "equal_to",
+              "value": "{{flow.variables.tester_phone}}"
+            }
+          ]
+        },
+        {
+          "next": "set_variables_CRITICAL",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value equal_to {{flow.variables.admin_phone}}",
+              "arguments": [
+                "{{trigger.call.From}}"
+              ],
+              "type": "equal_to",
+              "value": "{{flow.variables.admin_phone}}"
+            }
+          ]
+        },
+        {
+          "next": "set_variables_CRITICAL",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value equal_to {{flow.variables.mirt_lead_phone}}",
+              "arguments": [
+                "{{trigger.call.From}}"
+              ],
+              "type": "equal_to",
+              "value": "{{flow.variables.mirt_lead_phone}}"
+            }
+          ]
+        },
+        {
+          "next": "set_variables_CRITICAL",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value equal_to {{flow.variables.mission_lead_phone}}",
+              "arguments": [
+                "{{trigger.call.From}}"
+              ],
+              "type": "equal_to",
+              "value": "{{flow.variables.mission_lead_phone}}"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{trigger.call.From}}",
+        "offset": {
+          "x": -250,
+          "y": -140
+        }
+      }
+    },
+    {
+      "name": "split_text_adminQ",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "next": "split_text_MIRT",
+          "event": "noMatch"
+        },
+        {
+          "next": "send_message_1",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value equal_to +12523393423",
+              "arguments": [
+                "{{trigger.message.Body}}"
+              ],
+              "type": "contains",
+              "value": "admin"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{trigger.message.Body}}",
+        "offset": {
+          "x": -1490,
+          "y": 410
+        }
+      }
+    },
+    {
+      "name": "gather_1_clarify",
+      "type": "gather-input-on-call",
+      "transitions": [
+        {
+          "event": "keypress"
+        },
+        {
+          "next": "split_1_clarify",
+          "event": "speech"
+        },
+        {
+          "next": "say_play_connect_dockmaster",
+          "event": "timeout"
+        }
+      ],
+      "properties": {
+        "voice": "alice",
+        "speech_timeout": "5",
+        "offset": {
+          "x": -230,
+          "y": 1420
+        },
+        "loop": 1,
+        "language": "en-US",
+        "stop_gather": true,
+        "gather_language": "en",
+        "speech_model": "default",
+        "timeout": 3
+      }
+    },
+    {
+      "name": "split_1_clarify",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "next": "say_play_connect_dockmaster",
+          "event": "noMatch"
+        },
+        {
+          "next": "say_play_FIRE",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value contains fire",
+              "arguments": [
+                "{{widgets.gather_1_clarify.SpeechResult}}"
+              ],
+              "type": "contains",
+              "value": "fire"
+            }
+          ]
+        },
+        {
+          "next": "say_play_MEDICAL",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value contains medical",
+              "arguments": [
+                "{{widgets.gather_1_clarify.SpeechResult}}"
+              ],
+              "type": "contains",
+              "value": "medical"
+            }
+          ]
+        },
+        {
+          "next": "say_play_OTHER",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value contains other",
+              "arguments": [
+                "{{widgets.gather_1_clarify.SpeechResult}}"
+              ],
+              "type": "contains",
+              "value": "other"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{widgets.gather_1_clarify.SpeechResult}}",
+        "offset": {
+          "x": -580,
+          "y": 1650
+        }
+      }
+    },
+    {
+      "name": "say_play_GOODBYE",
+      "type": "say-play",
+      "transitions": [
+        {
+          "next": "run_subflow_call_admin",
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -770,
+          "y": 1840
+        },
+        "loop": 1,
+        "say": "I will attempt to call admin now."
+      }
+    },
+    {
+      "name": "run_subflow_call_admin",
+      "type": "run-subflow",
+      "transitions": [
+        {
+          "event": "completed"
+        },
+        {
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "flow_sid": "FW7643aface024038fffeaca1d2a017435",
+        "flow_revision": "LatestPublished",
+        "offset": {
+          "x": -1130,
+          "y": 2070
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "value": "{{flow.variables.admin_phone}}",
+            "key": "admin_phone"
+          },
+          {
+            "type": "string",
+            "value": "{{flow.variables.alert_phone}}",
+            "key": "alert_phone"
+          }
+        ]
+      }
+    },
+    {
+      "name": "subflow_text_admin",
+      "type": "run-subflow",
+      "transitions": [
+        {
+          "event": "completed"
+        },
+        {
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "flow_sid": "FWd5ff3a87927acf2da4955c578631a1ad",
+        "flow_revision": "LatestPublished",
+        "offset": {
+          "x": -1610,
+          "y": 960
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "value": "{{flow.variables.alert_phone}}",
+            "key": "alert_phone"
+          }
+        ]
+      }
+    },
+    {
+      "name": "subflow_text_register",
+      "type": "run-subflow",
+      "transitions": [
+        {
+          "event": "completed"
+        },
+        {
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "flow_sid": "FWc371dc9a6ff215356a4cb9b8702675bc",
+        "flow_revision": "LatestPublished",
+        "offset": {
+          "x": -1950,
+          "y": 950
+        },
+        "parameters": [
+          {
+            "type": "json_object",
+            "value": "{{flow.variables.admin_phone}}",
+            "key": "admin_phone"
+          }
+        ]
+      }
+    },
+    {
+      "name": "set_vbs_for_call",
+      "type": "set-variables",
+      "transitions": [
+        {
+          "next": "call_split_phoneQ2",
+          "event": "next"
+        }
+      ],
+      "properties": {
+        "variables": [
+          {
+            "type": "string",
+            "value": "{{widgets.fcn_get_DOCKMASTER_phone.parsed.dockmaster_phone}}",
+            "key": "dockmaster_phone"
+          },
+          {
+            "type": "string",
+            "value": "{{widgets.fcn_get_TESTER_phone.parsed.tester_phone}}",
+            "key": "tester_phone"
+          },
+          {
+            "type": "string",
+            "value": "{{widgets.fcn_get_TEST_877_phone.parsed.test_877_phone}}",
+            "key": "test_877"
+          }
+        ],
+        "offset": {
+          "x": -220,
+          "y": -560
+        }
+      }
+    },
+    {
+      "name": "say_play_NOPE",
+      "type": "say-play",
+      "transitions": [
+        {
+          "next": "say_play_GOODBYE",
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -960,
+          "y": 1350
+        },
+        "loop": 1,
+        "say": "Nope, not that one either.\nVar 1 = \n{{flow.variables.admin_phone}}...\nVar 2 = \n{{widgets.fcn_get_ADMIN_phone.parsed.admin_phone}}"
+      }
+    },
+    {
+      "name": "text_split_phoneQ",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "next": "split_text_MIRT",
+          "event": "noMatch"
+        },
+        {
+          "next": "split_text_adminQ",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value equal_to admin_phone",
+              "arguments": [
+                "{{trigger.message.From}}"
+              ],
+              "type": "equal_to",
+              "value": "{{flow.variables.admin_phone}}"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{trigger.message.From}}",
+        "offset": {
+          "x": -1420,
+          "y": 60
+        }
+      }
+    },
+    {
+      "name": "set_vbs_for_text",
+      "type": "set-variables",
+      "transitions": [
+        {
+          "next": "text_split_phoneQ",
+          "event": "next"
+        }
+      ],
+      "properties": {
+        "variables": [
+          {
+            "type": "json_object",
+            "value": "+12523689193",
+            "key": "alert_phone"
+          },
+          {
+            "type": "json_object",
+            "value": "+12523393423",
+            "key": "admin_phone"
+          }
+        ],
+        "offset": {
+          "x": -1440,
+          "y": -190
+        }
+      }
+    },
+    {
+      "name": "split_text_MIRT",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "event": "noMatch"
+        },
+        {
+          "next": "send_message_3",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value contains MIRT",
+              "arguments": [
+                "{{trigger.message.Body}}"
+              ],
+              "type": "contains",
+              "value": "MIRT"
+            }
+          ]
+        },
+        {
+          "next": "set_vbs_mission_lead_phone",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value contains LEAD",
+              "arguments": [
+                "{{trigger.message.Body}}"
+              ],
+              "type": "contains",
+              "value": "LEAD"
+            }
+          ]
+        },
+        {
+          "next": "split_cancel",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value contains cancel",
+              "arguments": [
+                "{{trigger.message.Body}}"
+              ],
+              "type": "contains",
+              "value": "CANCEL"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{trigger.message.Body}}",
+        "offset": {
+          "x": -2140,
+          "y": 380
+        }
+      }
+    },
+    {
+      "name": "send_message_1",
+      "type": "send-message",
+      "transitions": [
+        {
+          "next": "subflow_text_admin",
+          "event": "sent"
+        },
+        {
+          "next": "send_message_2",
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -1420,
+          "y": 700
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{trigger.message.To}}",
+        "message_type": "custom",
+        "to": "{{trigger.message.From}}",
+        "body": "This is Marina Bot. Calling admin subflow."
+      }
+    },
+    {
+      "name": "send_message_2",
+      "type": "send-message",
+      "transitions": [
+        {
+          "event": "sent"
+        },
+        {
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -1300,
+          "y": 970
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{trigger.message.To}}",
+        "message_type": "custom",
+        "to": "{{trigger.message.To}}",
+        "body": "ADMIN subflow failed"
+      }
+    },
+    {
+      "name": "send_message_3",
+      "type": "send-message",
+      "transitions": [
+        {
+          "next": "subflow_text_register",
+          "event": "sent"
+        },
+        {
+          "next": "send_message_2",
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -1830,
+          "y": 670
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{trigger.message.To}}",
+        "message_type": "custom",
+        "to": "{{trigger.message.From}}",
+        "body": "This is the AP Marina Incident Reporting System - Marina Bot.  \n\nThank you for registering your number to receive MIRT alerts.  I'm registering your phone now.  You should receive a confirmation text shortly.  If you don't receive a confirmation text, please contact the Marina Advisory Committee.\n\nMessage & data rates may apply.  \n\nText STOP to this number to stop receiving messages from Marina Bot."
+      }
+    },
+    {
+      "name": "run_text_alerts",
+      "type": "run-subflow",
+      "transitions": [
+        {
+          "next": "say_play_OK",
+          "event": "completed"
+        },
+        {
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "flow_sid": "FWd449a164b28c90125d85a3dbeab5ba0c",
+        "flow_revision": "LatestPublished",
+        "offset": {
+          "x": 680,
+          "y": 550
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "value": "{{flow.variables.admin_phone}}",
+            "key": "admin_phone"
+          },
+          {
+            "type": "string",
+            "value": "{{flow.variables.incident_type}}",
+            "key": "incident_type"
+          }
+        ]
+      }
+    },
+    {
+      "name": "set_variables_CRITICAL",
+      "type": "set-variables",
+      "transitions": [
+        {
+          "next": "say_play_hello",
+          "event": "next"
+        }
+      ],
+      "properties": {
+        "variables": [
+          {
+            "type": "string",
+            "value": "CRITICAL",
+            "key": "incident_type"
+          }
+        ],
+        "offset": {
+          "x": 650,
+          "y": 90
+        }
+      }
+    },
+    {
+      "name": "set_variables_FIRE",
+      "type": "set-variables",
+      "transitions": [
+        {
+          "next": "run_send_alerts_FIRE",
+          "event": "next"
+        }
+      ],
+      "properties": {
+        "variables": [
+          {
+            "type": "string",
+            "value": "FIRE",
+            "key": "incident_type"
+          }
+        ],
+        "offset": {
+          "x": -790,
+          "y": 2140
+        }
+      }
+    },
+    {
+      "name": "run_send_alerts_FIRE",
+      "type": "run-subflow",
+      "transitions": [
+        {
+          "next": "say_play_FIRE",
+          "event": "completed"
+        },
+        {
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "flow_sid": "FWd449a164b28c90125d85a3dbeab5ba0c",
+        "flow_revision": "LatestPublished",
+        "offset": {
+          "x": -640,
+          "y": 2270
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "value": "{{flow.variables.admin_phone}}",
+            "key": "admin_phone"
+          },
+          {
+            "type": "string",
+            "value": "{{flow.variables.incident_type}}",
+            "key": "incident_type"
+          }
+        ]
+      }
+    },
+    {
+      "name": "set_variables_MEDICAL",
+      "type": "set-variables",
+      "transitions": [
+        {
+          "next": "run_send_alerts_MEDICAL",
+          "event": "next"
+        }
+      ],
+      "properties": {
+        "variables": [
+          {
+            "type": "string",
+            "value": "MEDICAL",
+            "key": "incident_type"
+          }
+        ],
+        "offset": {
+          "x": -240,
+          "y": 2050
+        }
+      }
+    },
+    {
+      "name": "run_send_alerts_MEDICAL",
+      "type": "run-subflow",
+      "transitions": [
+        {
+          "next": "say_play_MEDICAL",
+          "event": "completed"
+        },
+        {
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "flow_sid": "FWd449a164b28c90125d85a3dbeab5ba0c",
+        "flow_revision": "LatestPublished",
+        "offset": {
+          "x": -230,
+          "y": 2240
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "value": "{{flow.variables.admin_phone}}",
+            "key": "admin_phone"
+          },
+          {
+            "type": "string",
+            "value": "{{flow.variables.incident_type}}",
+            "key": "incident_type"
+          }
+        ]
+      }
+    },
+    {
+      "name": "say_play_hello",
+      "type": "say-play",
+      "transitions": [
+        {
+          "next": "run_text_alerts",
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "voice": "alice",
+        "offset": {
+          "x": 650,
+          "y": 310
+        },
+        "loop": 1,
+        "say": "...Hello, this is the Marina automated helpline.  Please stand by while I text an alert to the marina incident response team.",
+        "language": "en-US"
+      }
+    },
+    {
+      "name": "say_play_connect_dockmaster",
+      "type": "say-play",
+      "transitions": [
+        {
+          "next": "connect_call_DOCKMASTER",
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "voice": "alice",
+        "offset": {
+          "x": 550,
+          "y": 1990
+        },
+        "loop": 1,
+        "say": "I have already notified the team.  Help should arrive shortly.   \n\nI'm afraid I don't understand the type of incident. I will try to connect you to the Dockmaster now.   If he is unable to answer, you may leave a voice mail.  But rest assured that the team has already been notified.\n\nTransferring you now.",
+        "language": "en-US"
+      }
+    },
+    {
+      "name": "connect_call_DOCKMASTER",
+      "type": "connect-call-to",
+      "transitions": [
+        {
+          "event": "callCompleted"
+        },
+        {
+          "event": "hangup"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 630,
+          "y": 2290
+        },
+        "caller_id": "{{contact.channel.address}}",
+        "noun": "number",
+        "to": "{{flow.variables.dockmaster_phone}}",
+        "timeout": 30
+      }
+    },
+    {
+      "name": "fcn_get_ADMIN_phone",
+      "type": "run-function",
+      "transitions": [
+        {
+          "next": "fcn_get_MIRT_LEAD_phone",
+          "event": "success"
+        },
+        {
+          "next": "say_play_FCN_ADMIN_Failed",
+          "event": "fail"
+        }
+      ],
+      "properties": {
+        "service_sid": "ZSf661782dce57dd0dceb294eab91fc272",
+        "environment_sid": "ZEa18940918c17da8ced83a64d50615e99",
+        "offset": {
+          "x": -820,
+          "y": -780
+        },
+        "function_sid": "ZH90ead657db8ad448058c7e3ddc2a81e8",
+        "url": "https://alert-blaster-8012.twil.io/get_ADMIN_phone"
+      }
+    },
+    {
+      "name": "say_play_FCN_ADMIN_Failed",
+      "type": "say-play",
+      "transitions": [
+        {
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "voice": "alice",
+        "offset": {
+          "x": -750,
+          "y": -560
+        },
+        "loop": 1,
+        "say": "Function admin failed.",
+        "language": "en-US"
+      }
+    },
+    {
+      "name": "fcn_get_ALERT_phone",
+      "type": "run-function",
+      "transitions": [
+        {
+          "next": "fcn_get_ALERT_911_phone",
+          "event": "success"
+        },
+        {
+          "next": "say_play_FCN_ALERT_Failed",
+          "event": "fail"
+        }
+      ],
+      "properties": {
+        "service_sid": "ZSf661782dce57dd0dceb294eab91fc272",
+        "environment_sid": "ZEa18940918c17da8ced83a64d50615e99",
+        "offset": {
+          "x": -200,
+          "y": -1080
+        },
+        "function_sid": "ZH3c1d8d86ff06245d890b38cf2cfcf743",
+        "url": "https://alert-blaster-8012.twil.io/get_ALERT_phone"
+      }
+    },
+    {
+      "name": "say_play_FCN_ALERT_Failed",
+      "type": "say-play",
+      "transitions": [
+        {
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "voice": "alice",
+        "offset": {
+          "x": 140,
+          "y": -1080
+        },
+        "loop": 1,
+        "say": "Function ALERT failed.",
+        "language": "en-US"
+      }
+    },
+    {
+      "name": "fcn_get_DOCKMASTER_phone",
+      "type": "run-function",
+      "transitions": [
+        {
+          "next": "fcn_get_TESTER_phone",
+          "event": "success"
+        },
+        {
+          "next": "say_play_FCN_DOCKMASTER_Failed",
+          "event": "fail"
+        }
+      ],
+      "properties": {
+        "service_sid": "ZSf661782dce57dd0dceb294eab91fc272",
+        "environment_sid": "ZEa18940918c17da8ced83a64d50615e99",
+        "offset": {
+          "x": -940,
+          "y": 800
+        },
+        "function_sid": "ZHcf7326fbcffdb252f6524f451b739a9f",
+        "url": "https://alert-blaster-8012.twil.io/get_DOCKMASTER_phone"
+      }
+    },
+    {
+      "name": "say_play_FCN_DOCKMASTER_Failed",
+      "type": "say-play",
+      "transitions": [
+        {
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "voice": "alice",
+        "offset": {
+          "x": -610,
+          "y": 800
+        },
+        "loop": 1,
+        "say": "Function Dockmaster Failed.",
+        "language": "en-US"
+      }
+    },
+    {
+      "name": "say_play_OK",
+      "type": "say-play",
+      "transitions": [
+        {
+          "next": "gather_hello",
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "voice": "alice",
+        "offset": {
+          "x": 700,
+          "y": 760
+        },
+        "loop": 1,
+        "say": "OK, I have notified the Marina Incident Team.  Help should arrive shortly.  \n\nSo I may provide an update to the team:",
+        "language": "en-US"
+      }
+    },
+    {
+      "name": "say_play_didnt_understand",
+      "type": "say-play",
+      "transitions": [
+        {
+          "next": "gather_1_clarify",
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 140,
+          "y": 1460
+        },
+        "loop": 1,
+        "say": "I have already notified the team.  Help should arrive shortly.    \n\nI'm afraid I didn't understand the type of incident.  Let's try one more time.  I would like to update the responders.   Are you reporting a Fire, Medical or ... Other type of incident?"
+      }
+    },
+    {
+      "name": "fcn_get_TESTER_phone",
+      "type": "run-function",
+      "transitions": [
+        {
+          "next": "set_vbs_for_call",
+          "event": "success"
+        },
+        {
+          "next": "say_play_FCN_TESTER_failed",
+          "event": "fail"
+        }
+      ],
+      "properties": {
+        "service_sid": "ZSf661782dce57dd0dceb294eab91fc272",
+        "environment_sid": "ZEa18940918c17da8ced83a64d50615e99",
+        "offset": {
+          "x": -720,
+          "y": 920
+        },
+        "function_sid": "ZH82f9dbcbf9c3db05a040cfd94aa59043",
+        "url": "https://alert-blaster-8012.twil.io/get_TESTER_phone"
+      }
+    },
+    {
+      "name": "say_play_FCN_TESTER_failed",
+      "type": "say-play",
+      "transitions": [
+        {
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -530,
+          "y": 1210
+        },
+        "loop": 1,
+        "say": "Function get TESTER failed."
+      }
+    },
+    {
+      "name": "fcn_get_ALERT_911_phone",
+      "type": "run-function",
+      "transitions": [
+        {
+          "next": "fcn_get_TEST_877_phone",
+          "event": "success"
+        },
+        {
+          "next": "say_play_FCN_ALERT_911_failed",
+          "event": "fail"
+        }
+      ],
+      "properties": {
+        "service_sid": "ZSf661782dce57dd0dceb294eab91fc272",
+        "environment_sid": "ZEa18940918c17da8ced83a64d50615e99",
+        "offset": {
+          "x": 10,
+          "y": -840
+        },
+        "function_sid": "ZH3e9f89018afee39f1c07931403a4b09b",
+        "url": "https://alert-blaster-8012.twil.io/get_ALERT_911_phone"
+      }
+    },
+    {
+      "name": "say_play_FCN_ALERT_911_failed",
+      "type": "say-play",
+      "transitions": [
+        {
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 550,
+          "y": -860
+        },
+        "loop": 1,
+        "say": "Function Alert 9-1-1 failed."
+      }
+    },
+    {
+      "name": "set_variables_911",
+      "type": "set-variables",
+      "transitions": [
+        {
+          "next": "call_split_911",
+          "event": "next"
+        }
+      ],
+      "properties": {
+        "variables": [
+          {
+            "type": "string",
+            "value": "\"911\"",
+            "key": "incident_type"
+          },
+          {
+            "type": "string",
+            "value": "{{widgets.fcn_get_ALERT_911_phone.parsed.alert_911_phone}}",
+            "key": "alert_911_phone"
+          },
+          {
+            "type": "string",
+            "value": "{{widgets.fcn_get_ALERT_phone.parsed.alert_phone}}",
+            "key": "alert_phone"
+          },
+          {
+            "type": "string",
+            "value": "{{widgets.fcn_get_TEST_877_phone.parsed.test_877_phone}}",
+            "key": "test_877_phone"
+          }
+        ],
+        "offset": {
+          "x": 190,
+          "y": -580
+        }
+      }
+    },
+    {
+      "name": "run_subflow_911",
+      "type": "run-subflow",
+      "transitions": [
+        {
+          "next": "fcn_get_911_number",
+          "event": "completed"
+        },
+        {
+          "next": "fcn_get_911_number",
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "flow_sid": "FWd449a164b28c90125d85a3dbeab5ba0c",
+        "flow_revision": "LatestPublished",
+        "offset": {
+          "x": 1360,
+          "y": -350
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "value": "{{flow.variables.incident_type}}",
+            "key": "incident_type"
+          }
+        ]
+      }
+    },
+    {
+      "name": "call_split_911",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "next": "fcn_get_ADMIN_phone",
+          "event": "noMatch"
+        },
+        {
+          "next": "say_play_connecting_to_911",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value equal_to {{flow.variables.alert_911_phone}}",
+              "arguments": [
+                "{{trigger.call.To}}"
+              ],
+              "type": "equal_to",
+              "value": "{{flow.variables.alert_911_phone}}"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{trigger.call.To}}",
+        "offset": {
+          "x": 80,
+          "y": -380
+        }
+      }
+    },
+    {
+      "name": "fcn_get_TEST_877_phone",
+      "type": "run-function",
+      "transitions": [
+        {
+          "next": "set_variables_911",
+          "event": "success"
+        },
+        {
+          "next": "say_play_FCN_TEST_877_failed",
+          "event": "fail"
+        }
+      ],
+      "properties": {
+        "service_sid": "ZSf661782dce57dd0dceb294eab91fc272",
+        "environment_sid": "ZEa18940918c17da8ced83a64d50615e99",
+        "offset": {
+          "x": 540,
+          "y": -590
+        },
+        "function_sid": "ZH2f63728e7bf560a5df95a03c7cca3312",
+        "url": "https://alert-blaster-8012.twil.io/get_TEST_877_phone"
+      }
+    },
+    {
+      "name": "say_play_FCN_TEST_877_failed",
+      "type": "say-play",
+      "transitions": [
+        {
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 870,
+          "y": -610
+        },
+        "loop": 1,
+        "say": "Function Test 877 failed"
+      }
+    },
+    {
+      "name": "fcn_get_MIRT_LEAD_phone",
+      "type": "run-function",
+      "transitions": [
+        {
+          "next": "function_get_MISSION_LEAD_phone",
+          "event": "success"
+        },
+        {
+          "next": "say_play_FCN_MIRT_TEAM_failed",
+          "event": "fail"
+        }
+      ],
+      "properties": {
+        "service_sid": "ZSf661782dce57dd0dceb294eab91fc272",
+        "environment_sid": "ZEa18940918c17da8ced83a64d50615e99",
+        "offset": {
+          "x": -1080,
+          "y": -350
+        },
+        "function_sid": "ZH2007c7079745d006ad3159d94b5c2396",
+        "url": "https://alert-blaster-8012.twil.io/get_MIRT_LEAD_phone"
+      }
+    },
+    {
+      "name": "say_play_FCN_MIRT_TEAM_failed",
+      "type": "say-play",
+      "transitions": [
+        {
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -760,
+          "y": -350
+        },
+        "loop": 1,
+        "say": "get_MIRT TEAM phone failed."
+      }
+    },
+    {
+      "name": "say_play_BLAST_now",
+      "type": "say-play",
+      "transitions": [
+        {
+          "next": "run_subflow_BLAST_cancel",
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 230,
+          "y": 650
+        },
+        "loop": 1,
+        "say": "I am CANCELing the alert now.  Please stand by.  This will only take a few seconds."
+      }
+    },
+    {
+      "name": "gather_test_or_admin",
+      "type": "gather-input-on-call",
+      "transitions": [
+        {
+          "next": "split_MIRT_LEAD_key",
+          "event": "keypress"
+        },
+        {
+          "event": "speech"
+        },
+        {
+          "event": "timeout"
+        }
+      ],
+      "properties": {
+        "voice": "alice",
+        "speech_timeout": "5",
+        "offset": {
+          "x": 10,
+          "y": 140
+        },
+        "loop": 1,
+        "hints": "admin, testing",
+        "finish_on_key": "#",
+        "say": "Hello, press 1 to cancel the alert...\npress 2 to do something else TBD...\npress 0 to test the system",
+        "language": "en-US",
+        "stop_gather": true,
+        "gather_language": "en",
+        "speech_model": "default",
+        "timeout": 2
+      }
+    },
+    {
+      "name": "call_split_admin_lead_or_test",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "next": "fcn_get_DOCKMASTER_phone",
+          "event": "noMatch"
+        },
+        {
+          "next": "gather_test_or_admin",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value equal_to {{flow.variables.mirt_lead_phone}}",
+              "arguments": [
+                "{{trigger.call.From}}"
+              ],
+              "type": "equal_to",
+              "value": "{{flow.variables.mirt_lead_phone}}"
+            }
+          ]
+        },
+        {
+          "next": "gather_test_or_admin",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value equal_to {{flow.variables.mission_lead_phone}}",
+              "arguments": [
+                "{{trigger.call.From}}"
+              ],
+              "type": "equal_to",
+              "value": "{{flow.variables.mission_lead_phone}}"
+            }
+          ]
+        },
+        {
+          "next": "gather_test_or_admin",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value equal_to {{flow.variables.admin_phone}}",
+              "arguments": [
+                "{{trigger.call.From}}"
+              ],
+              "type": "equal_to",
+              "value": "{{flow.variables.admin_phone}}"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{trigger.call.From}}",
+        "offset": {
+          "x": -1030,
+          "y": 340
+        }
+      }
+    },
+    {
+      "name": "function_get_MISSION_LEAD_phone",
+      "type": "run-function",
+      "transitions": [
+        {
+          "next": "set_lead_phones",
+          "event": "success"
+        },
+        {
+          "next": "say_play_FCN_MISSION_LEAD_fail",
+          "event": "fail"
+        }
+      ],
+      "properties": {
+        "service_sid": "ZSf661782dce57dd0dceb294eab91fc272",
+        "environment_sid": "ZEa18940918c17da8ced83a64d50615e99",
+        "offset": {
+          "x": -1050,
+          "y": -120
+        },
+        "function_sid": "ZH58ef59f84a8ca2b0618313a21b0dd98a",
+        "url": "https://alert-blaster-8012.twil.io/get_MISSION_LEAD_phone"
+      }
+    },
+    {
+      "name": "say_play_FCN_MISSION_LEAD_fail",
+      "type": "say-play",
+      "transitions": [
+        {
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -730,
+          "y": -100
+        },
+        "loop": 1,
+        "say": "Function get MISSION LEAD fail."
+      }
+    },
+    {
+      "name": "set_lead_phones",
+      "type": "set-variables",
+      "transitions": [
+        {
+          "next": "call_split_admin_lead_or_test",
+          "event": "next"
+        }
+      ],
+      "properties": {
+        "variables": [
+          {
+            "type": "string",
+            "value": "{{widgets.fcn_get_ADMIN_phone.parsed.admin_phone}}",
+            "key": "admin_phone"
+          },
+          {
+            "type": "string",
+            "value": "{{widgets.fcn_get_MIRT_LEAD_phone.parsed.mirt_lead_phone}}",
+            "key": "mirt_lead_phone"
+          },
+          {
+            "type": "string",
+            "value": "{{widgets.fcn_get_MISSION_LEAD_phone.parsed.mission_lead_phone}}",
+            "key": "mission_lead_phone"
+          }
+        ],
+        "offset": {
+          "x": -920,
+          "y": 130
+        }
+      }
+    },
+    {
+      "name": "say_play_TESTING",
+      "type": "say-play",
+      "transitions": [
+        {
+          "next": "fcn_get_DOCKMASTER_phone",
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -120,
+          "y": 580
+        },
+        "loop": 1,
+        "say": "Testing now"
+      }
+    },
+    {
+      "name": "run_subflow_BLAST_cancel",
+      "type": "run-subflow",
+      "transitions": [
+        {
+          "next": "say_play_1",
+          "event": "completed"
+        },
+        {
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "flow_sid": "FWfd2c5a43116d6fcac453e6ae3937e629",
+        "flow_revision": "LatestPublished",
+        "offset": {
+          "x": 300,
+          "y": 920
+        },
+        "parameters": [
+          {
+            "type": "string",
+            "value": "This is Marina Bot.  CANCEL the alert.",
+            "key": "message"
+          }
+        ]
+      }
+    },
+    {
+      "name": "say_play_1",
+      "type": "say-play",
+      "transitions": [
+        {
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 260,
+          "y": 1150
+        },
+        "loop": 1,
+        "say": "Cancel message sent.  Goodbye."
+      }
+    },
+    {
+      "name": "split_MIRT_LEAD_key",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "event": "noMatch"
+        },
+        {
+          "next": "say_play_TESTING",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value equal_to 1",
+              "arguments": [
+                "{{widgets.gather_test_or_admin.Digits}}"
+              ],
+              "type": "equal_to",
+              "value": "0"
+            }
+          ]
+        },
+        {
+          "next": "say_play_BLAST_now",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value equal_to 2",
+              "arguments": [
+                "{{widgets.gather_test_or_admin.Digits}}"
+              ],
+              "type": "equal_to",
+              "value": "1"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{widgets.gather_test_or_admin.Digits}}",
+        "offset": {
+          "x": 80,
+          "y": 360
+        }
+      }
+    },
+    {
+      "name": "fcn_get_911_number",
+      "type": "run-function",
+      "transitions": [
+        {
+          "next": "set_911_number",
+          "event": "success"
+        },
+        {
+          "next": "say_play_ERROR",
+          "event": "fail"
+        }
+      ],
+      "properties": {
+        "service_sid": "ZSf661782dce57dd0dceb294eab91fc272",
+        "environment_sid": "ZEa18940918c17da8ced83a64d50615e99",
+        "offset": {
+          "x": 1650,
+          "y": -90
+        },
+        "function_sid": "ZHdd5dd1d80139c61307a4e8b7794dda8a",
+        "url": "https://alert-blaster-8012.twil.io/get_911_PHONE"
+      }
+    },
+    {
+      "name": "set_911_number",
+      "type": "set-variables",
+      "transitions": [
+        {
+          "next": "connect_caller_to_911",
+          "event": "next"
+        }
+      ],
+      "properties": {
+        "variables": [
+          {
+            "type": "string",
+            "value": "{{widgets.fcn_get_911_number.parsed.nine_one_one_phone}}",
+            "key": "nine_one_one_phone"
+          }
+        ],
+        "offset": {
+          "x": 1700,
+          "y": 140
+        }
+      }
+    },
+    {
+      "name": "say_play_ERROR",
+      "type": "say-play",
+      "transitions": [
+        {
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 2030,
+          "y": 120
+        },
+        "loop": 1,
+        "say": "I failed to contact 911.  Hang up now and find someone with a cellphone and try again.  Help should arrive shortly."
+      }
+    },
+    {
+      "name": "connect_caller_to_911",
+      "type": "connect-call-to",
+      "transitions": [
+        {
+          "next": "say_play_WAIT_BY_PHONE",
+          "event": "callCompleted"
+        },
+        {
+          "event": "hangup"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 1770,
+          "y": 590
+        },
+        "caller_id": "{{contact.channel.address}}",
+        "noun": "number",
+        "to": "{{flow.variables.nine_one_one_phone}}",
+        "timeout": 30
+      }
+    },
+    {
+      "name": "say_play_WAIT_BY_PHONE",
+      "type": "say-play",
+      "transitions": [
+        {
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 1760,
+          "y": 840
+        },
+        "loop": 1,
+        "say": "I have already alerted the marina incident response team.  Help should arrive shortly.\n\nPlease be sure you are in a safe place.  Render aid to any injured persons if you can.\n\nOtherwise, if you can, remain by this phone.  Someone may call this number for more information before help arrives. \n\nGood bye."
+      }
+    },
+    {
+      "name": "set_vbs_mission_lead_phone",
+      "type": "set-variables",
+      "transitions": [
+        {
+          "next": "send_message_you_are_lead",
+          "event": "next"
+        }
+      ],
+      "properties": {
+        "variables": [
+          {
+            "type": "string",
+            "value": "{{trigger.message.From}}",
+            "key": "mission_lead_phone"
+          }
+        ],
+        "offset": {
+          "x": -2220,
+          "y": 640
+        }
+      }
+    },
+    {
+      "name": "send_message_you_are_lead",
+      "type": "send-message",
+      "transitions": [
+        {
+          "event": "sent"
+        },
+        {
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -2270,
+          "y": 860
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{flow.channel.address}}",
+        "message_type": "custom",
+        "to": "{{contact.channel.address}}",
+        "body": "This is Marina Bot.  This message confirms you are now the MISSION LEAD."
+      }
+    },
+    {
+      "name": "split_cancel",
+      "type": "split-based-on",
+      "transitions": [
+        {
+          "event": "noMatch"
+        },
+        {
+          "next": "run_subflow_BLAST_cancel",
+          "event": "match",
+          "conditions": [
+            {
+              "friendly_name": "If value equal_to {{flow.variables.mission_lead_phone}}",
+              "arguments": [
+                "{{trigger.From}}"
+              ],
+              "type": "equal_to",
+              "value": "{{flow.variables.mission_lead_phone}}"
+            }
+          ]
+        }
+      ],
+      "properties": {
+        "input": "{{trigger.From}}",
+        "offset": {
+          "x": -1650,
+          "y": 1190
+        }
+      }
+    },
+    {
+      "name": "say_play_connecting_to_911",
+      "type": "say-play",
+      "transitions": [
+        {
+          "next": "run_subflow_911",
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 810,
+          "y": -360
+        },
+        "loop": 1,
+        "say": "Connecting to 9-1-1, please stand by."
+      }
+    }
+  ],
+  "initial_state": "Trigger",
+  "flags": {
+    "allow_concurrent_calls": false
+  }
+}
