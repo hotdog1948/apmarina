@@ -1,0 +1,87 @@
+const axios = require('axios');
+
+exports.handler = async function (context, event, callback) {
+
+  /**
+   * Reformat Airtable-style phone number to E.164 for comparison
+   */
+  function formatToE164(rawPhone) {
+    if (!rawPhone) return null;
+    const digits = rawPhone.replace(/\D/g, '');
+    if (digits.length === 10) return '+1' + digits;
+    if (digits.length === 11 && digits.startsWith('1')) return '+' + digits;
+    return null; // Invalid number
+  }
+
+  const token = context.AIRTABLE_PERSONAL_ACCESS_TOKEN;
+//  console.log('Using Airtable Token:', token.slice(0, 6) + '... (truncated)');
+  if (!token) {
+    return callback(new Error('Missing Airtable token from environment.'));
+  }
+
+  const baseId = context.AIRTABLE_BASE_ID;
+  const tableName = encodeURIComponent('Roster');
+  const airtableUrl = `https://api.airtable.com/v0/${baseId}/${tableName}`;
+
+  const incident_type = event.incident_type;
+
+  const client = context.getTwilioClient();
+
+  const countryCode = "+1";
+
+  let phoneNumbers = [];
+  let offset = null;
+
+  try {
+    // Step 1: Fetch phone numbers from Airtable
+    do {
+      console.log('Requesting Airtable API at:', airtableUrl);
+      const response = await axios.get(airtableUrl, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        params: offset ? { offset } : {}
+      });
+
+      console.log('Airtable API raw response:', response.data);
+      const records = response.data.records;
+
+      if (!records || !Array.isArray(records)) {
+        console.error('Unexpected Airtable response:', response.data);
+        return callback(new Error('Airtable did not return a valid list of records.'));
+      }
+
+      records.forEach(record => {
+        const phone = formatToE164(record.fields.Mobile_Number);
+        if (phone) {
+          phoneNumbers.push(phone);
+          console.log("phone: " + phone);
+        } else {
+          return callback(null, { error: 'Phone number was invalid or empty' });
+        }
+      });
+
+      offset = response.data.offset;
+
+    } while (offset);
+
+    // Step 2: Send SMS to each number
+    const messageBody = '🚨 This is Marina Bot. A '.concat(incident_type," incident has been reported at the marina.");
+    await Promise.all(
+      phoneNumbers.map(number =>
+        client.messages.create({
+          body: messageBody,
+          from: context.TWILIO_PHONE_NUMBER,
+//          to: countryCode.concat(number)
+          to: number
+        })
+      )
+    );
+
+    callback(null, { success: true, count: phoneNumbers.length });
+  } catch (err) {
+    console.error('MIRT alert error:', err);
+    callback(err);
+  }
+};

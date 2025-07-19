@@ -1,0 +1,105 @@
+{
+  "description": "A New Flow",
+  "states": [
+    {
+      "name": "Trigger",
+      "type": "trigger",
+      "transitions": [
+        {
+          "event": "incomingMessage"
+        },
+        {
+          "event": "incomingCall"
+        },
+        {
+          "event": "incomingConversationMessage"
+        },
+        {
+          "event": "incomingRequest"
+        },
+        {
+          "next": "send_message_1",
+          "event": "incomingParent"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 0,
+          "y": 0
+        }
+      }
+    },
+    {
+      "name": "send_message_1",
+      "type": "send-message",
+      "transitions": [
+        {
+          "next": "send_message_2",
+          "event": "sent"
+        },
+        {
+          "next": "say_play_1",
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": -20,
+          "y": 200
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{trigger.parent.parameters.alert_phone}}",
+        "message_type": "custom",
+        "to": "+12523393423",
+        "body": "This is Marina bot.  A critical incident has been reported at the marina.\n\nText STOP to stop receiving these texts."
+      }
+    },
+    {
+      "name": "say_play_1",
+      "type": "say-play",
+      "transitions": [
+        {
+          "event": "audioComplete"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 460,
+          "y": 630
+        },
+        "loop": 1,
+        "say": "Send Alerts ... failed"
+      }
+    },
+    {
+      "name": "send_message_2",
+      "type": "send-message",
+      "transitions": [
+        {
+          "event": "sent"
+        },
+        {
+          "next": "say_play_1",
+          "event": "failed"
+        }
+      ],
+      "properties": {
+        "offset": {
+          "x": 570,
+          "y": 310
+        },
+        "service": "{{trigger.message.InstanceSid}}",
+        "channel": "{{trigger.message.ChannelSid}}",
+        "from": "{{trigger.parent.parameters.alert_phone}}",
+        "message_type": "custom",
+        "to": "+12523392140",
+        "body": "Rudi - This is Marina bot.  A critical incident has been reported at the marina.\nText STOP to stop receiving these texts."
+      }
+    }
+  ],
+  "initial_state": "Trigger",
+  "flags": {
+    "allow_concurrent_calls": true
+  }
+}

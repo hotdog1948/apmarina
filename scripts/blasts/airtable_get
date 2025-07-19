@@ -1,0 +1,52 @@
+const axios = require('axios');
+
+exports.handler = async function (context, event, callback) {
+  const token = context.AIRTABLE_PERSONAL_ACCESS_CODE;
+  const baseId = context.AIRTABLE_BASE_ID;
+  const tableName = 'Roster';
+  const airtableUrl = `https://api.airtable.com/v0/${baseId}/${tableName}`;
+  const client = context.getTwilioClient();
+
+  let phoneNumbers = [];
+  let offset = null;
+
+  try {
+    // Step 1: Fetch phone numbers from Airtable
+    do {
+      const response = await axios.get(airtableUrl, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        params: offset ? { offset } : {}
+      });
+
+      const records = response.data.records;
+
+      records.forEach(record => {
+        const phone = record.fields.Phone;
+        if (phone) phoneNumbers.push(phone);
+      });
+
+      offset = response.data.offset;
+
+    } while (offset);
+
+    // Step 2: Send SMS to each number
+    const messageBody = '🚨 This is Marina Bot. A Critical Incident has been reported at the marina.';
+    await Promise.all(
+      phoneNumbers.map(number =>
+        client.messages.create({
+          body: messageBody,
+          from: context.TWILIO_PHONE_NUMBER,
+          to: number
+        })
+      )
+    );
+
+    callback(null, { success: true, count: phoneNumbers.length });
+  } catch (err) {
+    console.error('MIRT alert error:', err);
+    callback(err);
+  }
+};
